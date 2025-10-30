@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Jab;
 using Microsoft.Extensions.Logging;
 
@@ -21,12 +22,12 @@ internal class EndpointResolver
   public virtual string Endpoint => "https://example.com/";
 }
 
-internal class ResponseProcessor(ILogger logger, int times)
+internal class ResponseProcessor(ILogger<ResponseProcessor> logger)
 {
   public virtual void Process(HttpResponseMessage response)
   {
     response.EnsureSuccessStatusCode();
-    foreach (var i in Enumerable.Range(0, times))
+    foreach (var i in Enumerable.Range(0, 5))
     {
       logger.LogInformation("{i}", i);
     }
@@ -35,14 +36,13 @@ internal class ResponseProcessor(ILogger logger, int times)
 
 [ServiceProviderModule]
 [Singleton(typeof(EndpointResolver))]
-[Transient(typeof(ResponseProcessor), Factory = nameof(ResponseProcessorFactory))]
+[Transient(typeof(ResponseProcessor))]
 [Transient(typeof(MainService))]
+[Transient(typeof(ILogger<>), Factory = nameof(CreateLogger))]
 internal interface IMainServiceModule
 {
-  private static readonly ILogger Logger =
-    LoggerFactory
-      .Create(builder => builder.AddConsole())
-      .CreateLogger("default");
+  internal static ILogger<T> CreateLogger<T>() => MyLoggerFactory.CreateLogger<T>();
 
-  public static ResponseProcessor ResponseProcessorFactory() => new(Logger, 5);
+  private static readonly ILoggerFactory MyLoggerFactory =
+    LoggerFactory.Create(builder => builder.AddConsole());
 }
