@@ -9,9 +9,5 @@ await service.Run();
 
 [ServiceProvider]
 [Import(typeof(IMainServiceModule))]
-[Singleton(typeof(ResponseProcessor), Factory = nameof(ConstructResponseProcessor))]
 [Singleton(typeof(HttpClient), typeof(HttpClient))]
-internal partial class ServiceProvider
-{
-  public static ResponseProcessor ConstructResponseProcessor() => new(10);
-}
+internal partial class ServiceProvider;

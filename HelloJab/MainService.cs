@@ -1,8 +1,12 @@
 using Jab;
+using Microsoft.Extensions.Logging;
 
 namespace HelloJab;
 
-internal class MainService(HttpClient httpClient, EndpointResolver endpointResolver, ResponseProcessor processor)
+internal class MainService(
+  HttpClient httpClient,
+  EndpointResolver endpointResolver,
+  ResponseProcessor processor)
 {
   public async Task Run()
   {
@@ -17,14 +21,14 @@ internal class EndpointResolver
   public virtual string Endpoint => "https://example.com/";
 }
 
-internal class ResponseProcessor(int times)
+internal class ResponseProcessor(ILogger logger, int times)
 {
   public virtual void Process(HttpResponseMessage response)
   {
     response.EnsureSuccessStatusCode();
     foreach (var i in Enumerable.Range(0, times))
     {
-      Console.WriteLine(i);
+      logger.LogInformation("{i}", i);
     }
   }
 }
@@ -35,5 +39,10 @@ internal class ResponseProcessor(int times)
 [Transient(typeof(MainService))]
 internal interface IMainServiceModule
 {
-  public static ResponseProcessor ResponseProcessorFactory() => new(5);
+  private static readonly ILogger Logger =
+    LoggerFactory
+      .Create(builder => builder.AddConsole())
+      .CreateLogger("default");
+
+  public static ResponseProcessor ResponseProcessorFactory() => new(Logger, 5);
 }
